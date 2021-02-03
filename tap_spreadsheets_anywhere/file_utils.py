@@ -310,6 +310,7 @@ def config_by_crawl(crawl_config):
                         "max_sampling_read": source.get('max_sampling_read', 1000),
                         "universal_newlines": source.get('universal_newlines', True),
                         "prefer_number_vs_integer": source.get('prefer_number_vs_integer', False),
+                        "full_table_replace": source.get('full_table_replace', False),
                         "start_date": modified_since.isoformat()
                     }
                 elif abs_pattern != entries[table]["pattern"]:
@@ -330,6 +331,7 @@ def config_by_crawl(crawl_config):
                             "max_sampling_read": source.get('max_sampling_read', 1000),
                             "universal_newlines": source.get('universal_newlines', True),
                             "prefer_number_vs_integer": source.get('prefer_number_vs_integer', False),
+                            "full_table_replace": source.get('full_table_replace', False),
                             "start_date": modified_since.isoformat()
                         }
 

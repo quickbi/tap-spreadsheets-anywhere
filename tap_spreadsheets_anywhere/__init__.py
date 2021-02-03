@@ -107,21 +107,26 @@ def sync(config, state, catalog):
                 key_properties=stream.key_properties,
             )
 
-            # Emit a Singer ACTIVATE_VERSION message before initial sync (but not subsequent syncs)
-            # and everytime a sheet sync is complete.
-            # This forces hard deletes on the data downstream if fewer records are sent.
-            # https://github.com/singer-io/singer-python/blob/master/singer/messages.py#L137
+            full_table_replace = table_spec['full_table_replace'] if 'full_table_replace' in table_spec else False
+            activate_version = None
 
-            is_initial_sync = 'modified_since' not in state.get(stream.tap_stream_id, {})
-            activate_version = int(time.time() * 1000)
-            activate_version_message = singer.ActivateVersionMessage(
-                stream=stream.tap_stream_id,
-                version=activate_version,
-            )
-            if is_initial_sync:
-                # initial load, send ACTIVATE_VERSION message before the data sync
-                singer.write_message(activate_version_message)
-                LOGGER.info(f'INITIAL SYNC, Stream: {stream.tap_stream_id}, Activate Version: {activate_version}')
+            if full_table_replace:
+                LOGGER.info(f'Use full table replace for Stream: {stream.tap_stream_id}')
+                # Emit a Singer ACTIVATE_VERSION message before initial sync (but not subsequent syncs)
+                # and everytime a sheet sync is complete.
+                # This forces hard deletes on the data downstream if fewer records are sent.
+                # https://github.com/singer-io/singer-python/blob/master/singer/messages.py#L137
+
+                is_initial_sync = 'modified_since' not in state.get(stream.tap_stream_id, {})
+                activate_version = int(time.time() * 1000)
+                activate_version_message = singer.ActivateVersionMessage(
+                    stream=stream.tap_stream_id,
+                    version=activate_version,
+                )
+                if is_initial_sync:
+                    # initial load, send ACTIVATE_VERSION message before the data sync
+                    singer.write_message(activate_version_message)
+                    LOGGER.info(f'INITIAL SYNC, Stream: {stream.tap_stream_id}, Activate Version: {activate_version}')
 
             modified_since = dateutil.parser.parse(
                 state.get(stream.tap_stream_id, {}).get('modified_since') or table_spec['start_date'])
@@ -142,9 +147,10 @@ def sync(config, state, catalog):
                 state[stream.tap_stream_id] = {'modified_since': t_file['last_modified'].isoformat()}
                 singer.write_state(state)
 
-            # End of Stream: Send ACTIVATE_VERSION message
-            singer.write_message(activate_version_message)
-            LOGGER.info(f'COMPLETE SYNC, Stream: {stream.tap_stream_id}, Activate Version: {activate_version}')
+            if full_table_replace:
+                # End of Stream: Send ACTIVATE_VERSION message
+                singer.write_message(activate_version_message)
+                LOGGER.info(f'COMPLETE SYNC, Stream: {stream.tap_stream_id}, Activate Version: {activate_version}')
             LOGGER.info(f'Wrote {records_streamed} records for stream "{stream.tap_stream_id}".')
         else:
             LOGGER.warn(f'Skipping processing for stream [{stream.tap_stream_id}] without a config block.')
