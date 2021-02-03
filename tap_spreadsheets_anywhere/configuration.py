@@ -26,6 +26,7 @@ CONFIG_CONTRACT = Schema({
         Optional('max_records_per_run'): int,
         Optional('max_sampled_files'): int,
         Optional('prefer_number_vs_integer'): bool,
+        Optional('full_table_replace'): bool,
         Optional('schema_overrides'): {
             str: {
                 Required('type'): Any(Any('null','string','integer','number','date-time'),

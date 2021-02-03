@@ -107,6 +107,8 @@ Each object in the 'tables' array describes one or more CSV or Excel spreadsheet
 - **max_records_per_run**: (optional) The maximum number of records that should be written to this stream in a single sync run. The default is unlimited. 
 - **prefer_number_vs_integer**: (optional) If the discovery mode sampling process sees only integer values for a field, should `number` be used anyway so that floats are not considered errors? The default is false but true can help in situations where floats only appear rarely in sources and may not be detected through discovery sampling.
 - **selected**: (optional) Should this table be synced. Defaults to true. Setting to false will skip this table on a sync run.
+- **full_table_replace**: (optional) Should the target table be fully replaced with new data. Defaults to false. Convenient if the extracted spreadsheet contains fewer lines than in a
+previous sync.
 - **worksheet_name**: (optional) the worksheet name to pull from in the targeted xls file(s). Only required when format is excel
 - **delimiter**: (optional) the delimiter to use when format is 'csv'. Defaults to a comma ',' but you can set delimiter to 'detect' to leverage the csv "Sniffer" for auto-detecting delimiter. 
 - **quotechar**: (optional) the character used to surround values that may contain delimiters - defaults to a double quote '"'
