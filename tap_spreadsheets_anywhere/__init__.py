@@ -107,7 +107,7 @@ def sync(config, state, catalog):
                 key_properties=stream.key_properties,
             )
 
-            full_table_replace = table_spec['full_table_replace'] if 'full_table_replace' in table_spec else False
+            full_table_replace = table_spec.get('full_table_replace', False)
             activate_version = None
 
             if full_table_replace:
