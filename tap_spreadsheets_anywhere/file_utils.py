@@ -17,7 +17,27 @@ from dateutil.parser import parse as parsedate
 LOGGER = logging.getLogger(__name__)
 
 
-def write_file(target_filename, table_spec, schema, max_records=-1):
+def write_record(stream_name, record, time_extracted=None, version=None):
+    try:
+        if version:
+            singer.messages.write_message(
+                singer.messages.RecordMessage(
+                    stream=stream_name,
+                    record=record,
+                    version=version,
+                    time_extracted=time_extracted))
+        else:
+            singer.messages.write_record(
+                stream_name=stream_name,
+                record=record,
+                time_extracted=time_extracted)
+    except OSError as err:
+        LOGGER.info('OS Error writing record for: {}'.format(stream_name))
+        LOGGER.info('record: {}'.format(record))
+        raise err
+
+
+def write_file(target_filename, table_spec, schema, max_records=-1, version=None):
     LOGGER.info('Syncing file "{}".'.format(target_filename))
     target_uri = table_spec['path'] + '/' + target_filename
     records_synced = 0
@@ -33,7 +53,8 @@ def write_file(target_filename, table_spec, schema, max_records=-1):
 
             try:
                 to_write = [{**conversion.convert_row(row, schema), **metadata}]
-                singer.write_records(table_spec['name'], to_write)
+                for record in to_write:
+                    write_record(table_spec['name'], record, version=version)
             except BrokenPipeError as bpe:
                 LOGGER.error(
                     f'Pipe to loader broke after {records_synced} records were written from {target_filename}: troubled '
@@ -211,7 +232,7 @@ def list_files_in_local_bucket(bucket, search_prefix=None):
 
 def list_files_in_gs_bucket(bucket, search_prefix=None):
     gs_client = storage.Client()
-        
+
     blobs = gs_client.list_blobs(bucket, prefix=search_prefix)
 
     LOGGER.info("Found {} files.".format(len(blobs)))
